@@ -1,0 +1,499 @@
+---
+title: "Online Shoppers Purchasing Intention"
+subtitle: "Classification Analysis"
+author: "Erick Xavier Maldonado"
+format:
+  html: 
+    code-fold: false
+    code-overflow: wrap
+    toc: true
+execute:
+  warning: false
+  messages: false
+  echo: false
+editor: source
+---
+
+```{r}
+library(tidyverse)
+library(readr)
+library(caret)
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(pROC)
+library(gains)
+library(DataExplorer)
+library(janitor)
+library(flextable)
+library(dlookr)
+
+options(scipen=999)
+```
+
+# 1. Business Understanding
+
+In the e-commerce sector, marketing budgets are often wasted on "window shoppers", users who browse without intent to purchase. The following analysis focuses on a dataset of 12,330 distinct user sessions over a one-year period. By ensuring each session belongs to a different user, we avoid biases related to specific campaigns or user profiles.
+
+Currently, the vast majority of sessions representing a 84.5% do not result in a transaction. Treating all visitors equally leads to inefficient resource allocation. The marketing team aims to shift from a "spray and pray" strategy to a precision-based approach, targeting only those with a high probability of conversion.
+
+**Research Questions:**
+
+1.  **Behavioral Intent:** Can we accurately distinguish between a "bouncer" and a "buyer" using engagement metrics like PageValues and ExitRates?
+
+2.  **The "Special Day" Effect:** Does the proximity to a special event, like Valentine's Day for example, significantly alter purchasing probability, justifying specific holiday campaigns?
+
+
+# 2. Data Understanding and Preparation
+
+The dataset **online_shoppers_intention_classification.csv** sourced from the UCI Machine Learning Repository contains 12,330 observations.
+
+**Dataset Characteristics:**
+
+- **Imbalance:** 10,422 (84.5%) sessions are Negative (No Purchase), while 1,908 (15.5%) are Positive (Purchase).\
+
+- **Features:** There are 10 numerical attributes (including Google Analytics metrics) and 8 categorical/binary attributes.\
+
+- **Missing Values:** The dataset contains no missing values.\
+
+
+```{r}
+
+# Load the dataset
+shoppers_raw <- read_csv("online_shoppers_intention_classification.csv") %>% 
+  clean_names()
+
+# AESTHETIC OUTPUT: Vertical Data Structure Table (Fits perfectly)
+# This creates a clean table of Variable Names and Types instead of a wide text dump
+tibble(
+  Variable = names(shoppers_raw),
+  Type = map_chr(shoppers_raw, typeof),
+  Example = map_chr(shoppers_raw, ~ as.character(head(.x, 1)))
+) %>%
+  flextable() %>%
+  set_caption("Dataset Structure") %>%
+  theme_vanilla() %>%
+  autofit()
+
+# Verify Class Balance - Formatted Professional Table
+shoppers_raw %>%
+  count(revenue) %>%
+  mutate(Proportion = n / sum(n)) %>%
+  flextable() %>%
+  set_header_labels(revenue = "Revenue Class", n = "Count", Proportion = "Proportion") %>%
+  colformat_double(j = "Proportion", digits = 4) %>%
+  set_caption("Class Balance Distribution") %>%
+  theme_vanilla() %>%
+  autofit()
+
+# Histogram of key engagement metrics (Added Minimal Theme)
+shoppers_raw %>% 
+  select(product_related_duration, page_values, exit_rates, special_day) %>% 
+  plot_histogram(ggtheme = theme_minimal(), title = "Distribution of Key Metrics")
+
+# Boxplots to see relationship with Revenue (Added Minimal Theme)
+shoppers_raw %>% 
+  select(revenue, product_related_duration, page_values, exit_rates) %>% 
+  plot_boxplot(by = "revenue", ggtheme = theme_minimal(), title = "Predictors vs Revenue")
+
+```
+
+The exploratory analysis reveals significant outliers in `ProductRelated_Duration` and `PageValues`, which are heavily right-skewed. Rather than removing these data points, which likely represent high-value customer behaviors, we will retain them and apply a log transformation during the Data Preparation phase.
+
+
+# 3. Data Preparation
+
+### Feature Engineering & Cleaning
+
+As per the dataset description, several variables, like `Region`, `TrafficType`, `OperatingSystems`, `Browser` are encoded as integers but represent nominal categories. To ensure clarity in our model output we will:
+
+- **Prefix Method:** Rename integer levels for example, `1 -> Region_1` to prevent the model from treating them mathematically.
+
+- **Log Transformation:** Apply log transformations to the skewed Duration and PageValue metrics.
+
+Factor Conversion: Ensure `Weekend` and `Revenue` are proper factors.\
+
+
+```{r}
+shoppers <- shoppers_raw %>% 
+  # 1. Rename Categorical Levels for Clarity
+  mutate(
+    traffic_type = paste0("Source_", traffic_type),
+    region = paste0("Region_", region),
+    browser = paste0("Browser_", browser),
+    operating_systems = paste0("OS_", operating_systems),
+    # Convert Boolean Weekend to clear Label
+    weekend = ifelse(weekend == TRUE, "Weekend_Yes", "Weekend_No")
+  ) %>%
+  
+  # 2. Log Transformation (adding +1 to avoid log(0))
+  mutate(
+    log_admin_duration = log(administrative_duration + 1),
+    log_info_duration = log(informational_duration + 1),
+    log_product_duration = log(product_related_duration + 1),
+    log_page_values = log(page_values + 1)
+  ) %>%
+  
+  # 3. Convert to Factors
+  mutate(
+    revenue = factor(ifelse(revenue == TRUE, "Yes", "No"), levels = c("No", "Yes")),
+    month = factor(month),
+    visitor_type = factor(visitor_type),
+    weekend = factor(weekend),
+    traffic_type = factor(traffic_type),
+    region = factor(region),
+    browser = factor(browser),
+    operating_systems = factor(operating_systems)
+  ) %>%
+  
+  # Remove original columns that were transformed to avoid multicollinearity
+  select(-administrative_duration, -informational_duration, -product_related_duration, -page_values)
+
+# AESTHETIC OUTPUT: Showing the transformed structure
+shoppers %>%
+  dplyr::select(region, traffic_type, weekend, revenue, log_page_values) %>% 
+  head(5) %>% 
+  flextable() %>% 
+  set_caption("Preview of Transformed Variables (Data Preparation)") %>%
+  theme_vanilla() %>% 
+  autofit()
+
+```
+
+
+### Partitioning (70/30)
+
+We use a 70/30 split to create Training and Validation sets.\
+
+
+```{r}
+set.seed(1)
+train_index <- createDataPartition(shoppers$revenue, p = 0.7, list = FALSE)
+train_set <- shoppers[train_index, ]
+test_set  <- shoppers[-train_index, ]
+
+# Verify Balance - Aesthetic Improvement
+# We convert the table to a data frame so kable can format it nicely
+balance_tab <- as.data.frame(prop.table(table(train_set$revenue)))
+colnames(balance_tab) <- c("Revenue Class", "Proportion")
+
+# Print the formatted table
+knitr::kable(balance_tab, 
+             digits = 4, 
+             caption = "Training Set Class Balance",
+             align = 'c')
+
+#Code assisted by Gemini (Aesthetics improvement)
+
+```
+
+# 4. Model Development
+
+We will train three models. Given the 15.5% positive class rate, we will apply Class Weights to the Decision Tree and Random Forest to penalize misclassification of the minority class.
+
+
+```{r}
+
+# Inverse frequency weighting
+model_weights <- ifelse(train_set$revenue == "No",
+                        (1/table(train_set$revenue)["No"]) * 0.5,
+                        (1/table(train_set$revenue)["Yes"]) * 0.5)
+
+```
+
+## Model 1: Logistic Regression
+
+The Logistic Regression model offers the most interpretable look at the specific "drivers" of purchase behavior.\
+
+```{r}
+set.seed(1)
+ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+
+# Note: Logistic regression handles imbalance better via threshold tuning in the evaluation stage
+model_logit <- train(
+  revenue ~ ., 
+  data = train_set,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+
+# AESTHETIC REPLACEMENT:
+# Instead of cat() and head(), use a flextable to show Odds Ratios + AIC
+
+# 1. Extract coefficients and calculate Odds Ratios
+odds_values <- exp(coef(model_logit$finalModel))
+
+# 2. Create the table
+tibble(
+  Predictor = names(odds_values),
+  Odds_Ratio = odds_values
+) %>%
+  head(10) %>% 
+  flextable() %>%
+  set_header_labels(Predictor = "Variable", Odds_Ratio = "Odds Ratio") %>%
+  set_caption("Logistic Regression Results: Significant Odds Ratios") %>%
+  # FIX: Use the original column name "Odds_Ratio" (underscore), not the label "Odds Ratio"
+  colformat_double(j = "Odds_Ratio", digits = 4) %>% 
+  theme_vanilla() %>%
+  autofit() %>%
+  add_footer_lines(paste("Model Fit Statistic: AIC =", round(model_logit$finalModel$aic, 2)))
+
+```
+
+The model was fitted using all available predictors, **AIC = 4412.51**. While some individual categorical levels showed lower significance, we retained the full feature set (no trimming) to preserve the interpretability of all Traffic Sources and Months for the business stakeholders.
+
+- **Friction is the Enemy:** The most significant finding is the extreme negative impact of `ExitRates`, Odds Ratio $\approx$ 0.0001 and `BounceRates`, Odds Ratio $\approx$ 0.0048. This statistically confirms that users who demonstrate "leaving behavior" or single-page sessions are virtually guaranteed not to buy.\
+
+- **The "Special Day" Effect:** Addressing Research Question 2, the `SpecialDay` variable has an Odds Ratio of **1.16911**. This indicates that for every unit increase in closeness to a special holiday, the odds of a purchase increase by approximately **16.9%**, holding everything else constant.\
+
+- **Seasonality:** Seasonality plays a measurable role, for example, July with a OR = 1.18 shows a higher likelihood of conversion, while February, OR = 0.15 shows a significantly lower likelihood compared to the baseline.\
+
+
+## Model 2: Decision Tree (CART)
+
+We include `weights = model_weights` to force the tree to prioritize the 1,908 positive cases.\
+The Decision Tree simplifies the user journey into hierarchical rules.\
+
+```{r}
+
+set.seed(1)
+model_tree <- train(
+  revenue ~ .,
+  data = train_set,
+  method = "rpart",
+  trControl = ctrl,
+  tuneLength = 10,
+  metric = "ROC",
+  weights = model_weights # Applying weights
+)
+
+# Plot the best tree
+rpart.plot(model_tree$finalModel, extra = 104, box.palette = "GnBu", 
+           main = "Decision Tree: Shopper Intention")
+# Extract CP automatically
+final_cp <- model_tree$bestTune$cp
+
+```
+The tree was optimized using cross-validation. he final selected model used a CP of `r round(final_cp, 5)`, which balanced tree depth, which balanced tree depth against predictive accuracy.
+
+- **The "Golden Rule" of Page Value:** The root node split confirms that `log_page_values` is the single most important discriminator. The tree splits first on whether `log_page_values` is less than **0.032.**\
+
+- **The "Window Shopper" Path:** If a user has a low Page Value, left branch, the model immediately categorizes them into a node where the probability of purchase drops to **10% or less.**\
+
+- **The "Buyer" Path:** If the Page Value is high (right branch), the model identifies a high-intent segment where the probability of purchase jumps to **46% or higher.**\
+
+
+
+## Model 3: Random Forest (Ensemble)
+
+Random Forest is ideal for handling the 17 features, including the high-cardinality categorical variables like `TrafficType` and `Region`.\
+
+
+```{r}
+
+## Model 3: Random Forest (Ensemble)
+
+# 1. Create a "Fast" Control with fewer folds (5 instead of 10)
+ctrl_fast <- trainControl(method = "cv", number = 5, classProbs = TRUE, summaryFunction = twoClassSummary)
+
+# 2. Reduce the grid to fewer options
+rf_grid_small <- expand.grid(mtry = c(4, 8)) 
+
+set.seed(123)
+# --- STEP 1: Train the Model (Creates 'model_rf') ---
+model_rf <- train(
+  revenue ~ ., 
+  data = train_set,
+  method = "rf",
+  trControl = ctrl_fast, 
+  tuneGrid = rf_grid_small,
+  metric = "ROC",
+  weights = model_weights, 
+  ntree = 50 
+)
+
+# --- STEP 2: Aesthetic Output (Uses 'model_rf') ---
+model_rf$results %>%
+  dplyr::select(mtry, ROC, Sens, Spec) %>%
+  dplyr::rename(Sensitivity = Sens, Specificity = Spec) %>%
+  flextable() %>%
+  set_caption("Random Forest Tuning Results (5-Fold Cross Validation)") %>%
+  colformat_double(digits = 4) %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  add_footer_lines(paste("The final selected model used mtry =", model_rf$bestTune$mtry))
+```
+
+The Random Forest was employed to capture complex non-linear interactions between the 17 features. The model was tuned using 5-fold cross-validation, selecting an optimal `mtry` of 8.\
+
+# 5. Model Evaluation
+
+To address the business requirement of "Efficiency," we cannot use a default 50% cutoff. We must use Threshold Tuning to find the optimal probability cutoff that balances Sensitivity (catching buyers) and Specificity (avoiding window shoppers).\
+
+```{r}
+# 1. Define the Metrics Function (Ensuring F1 is included)
+get_best_metrics <- function(model, test_data, model_name) {
+  
+  # Predict Probabilities (focusing on "Yes" class)
+  probs <- predict(model, newdata = test_data, type = "prob")[, "Yes"]
+  
+  # Build ROC Object
+  roc_obj <- roc(test_data$revenue, probs, quiet = TRUE) # quiet=TRUE silences "Setting levels" messages
+  auc_val <- auc(roc_obj)
+  
+  # Find Optimal Threshold (Youden's Index)
+  best_coords <- coords(roc_obj, "best", ret = "threshold", transpose = TRUE)
+  best_thresh <- best_coords[1]
+  
+  # Predict Class based on Threshold
+  pred_class <- factor(ifelse(probs >= best_thresh, "Yes", "No"), levels = c("No", "Yes"))
+  
+  # Confusion Matrix
+  cm <- confusionMatrix(pred_class, test_data$revenue, positive = "Yes")
+  
+  # Calculate F1 manually to ensure it exists
+  precision <- cm$byClass["Pos Pred Value"]
+  sensitivity <- cm$byClass["Sensitivity"]
+  f1_calc <- 2 * ((precision * sensitivity) / (precision + sensitivity))
+  
+  # Handle NaN if precision + sensitivity is 0
+  if(is.na(f1_calc)) f1_calc <- 0
+  
+  # Return Named Vector
+  return(c(
+    Model = model_name,
+    AUC = as.numeric(auc_val),
+    Threshold = as.numeric(best_thresh),
+    Accuracy = as.numeric(cm$overall["Accuracy"]),
+    Sensitivity = as.numeric(sensitivity),
+    Specificity = as.numeric(cm$byClass["Specificity"]),
+    F1 = as.numeric(f1_calc)
+  ))
+}
+
+# 2. Run evaluation for all 3 models
+# Note: "rank-deficient" warnings for Logistic Regression are normal due to high correlation, safe to ignore.
+metrics_logit <- get_best_metrics(model_logit, test_set, "Logistic Regression")
+metrics_tree  <- get_best_metrics(model_tree, test_set, "Decision Tree")
+metrics_rf    <- get_best_metrics(model_rf, test_set, "Random Forest")
+
+# 3. Combine into a table
+comparison_table <- bind_rows(metrics_logit, metrics_tree, metrics_rf) %>%
+  as.data.frame() %>%
+  # FIX: Use 'across(-Model)' to convert everything EXCEPT the Model name to numeric
+  mutate(across(-Model, as.numeric)) %>% 
+  arrange(desc(AUC))
+
+# 4. Display the table
+flextable(comparison_table) %>% 
+  set_caption("Model Performance Comparison (Tuned Thresholds)") %>%
+  colformat_double(digits = 3)
+
+# Code Assisted by Gemini.
+
+```
+
+In order to select the best model for deployment, we compared the three models using Threshold Tuning to maximize the F1 Score.\
+
+- **We have a Winner:** The Random Forest model is selected as the champion. It achieved the highest F1 Score **(0.671)**, indicating it provides the best balance between catching true buyers and avoiding false alarms.\
+
+Performance Metrics:
+
+- **Discriminatory Power:** The Random Forest achieved an AUC of 0.919, comparable to the Logistic Regression's 0.924. This confirms the model is excellent at ranking customers from "most likely" to "least likely" to buy.\
+
+- **Sensitivity:** With a Sensitivity of 0.815, the model successfully identifies 81.5% of all actual buyers.\
+
+- **Rationale:** Although Logistic Regression had a marginally higher AUC, the Random Forest demonstrated a better F1 score. This suggests it is more robust at handling the complex interactions between categorical variables, like `TrafficType` and `Region` without overfitting.
+
+
+
+### Cumulative Gains Chart (Best Model)
+The Random Forest typically yields the best AUC. We plot the Gains chart to visualize the "Lift" provided by the Google Analytics metrics.
+
+```{r}
+
+# RF Predictions
+rf_probs <- predict(model_rf, newdata = test_set, type = "prob")[, "Yes"]
+test_set_numeric <- ifelse(test_set$revenue == "Yes", 1, 0)
+
+# Gains Table
+gains_rf <- gains(test_set_numeric, rf_probs, groups = 10)
+
+# Plot
+plot(c(0, gains_rf$cume.pct.of.total * sum(test_set_numeric)) ~ c(0, gains_rf$cume.obs), 
+     type = "l", col = "blue", lwd = 2,
+     xlab = "# of Cases", ylab = "Cumulative Conversions",
+     main = "Cumulative Gains Chart - Random Forest")
+lines(c(0, sum(test_set_numeric)) ~ c(0, nrow(test_set)), col = "red", lty = 2)
+
+```
+- The blue model line rises extremely sharply at the beginning. This indicates that the customers the model ranked as "highest probability" are the actual buyers.
+
+- By targeting approximately the top 1,000 cases, roughly about the top 30% of the test population, the model captures nearly 90% of all available conversions, where the curve begins to flatten.
+
+- The "flat" part of the blue curve represents the majority of site visitors who are "window shoppers." Retargeting these users wastes budget because they do not contribute. The chart proves we can safely stop marketing to the bottom 70% of visitors while still capturing the vast majority of revenue.
+
+
+# 6. Deployment and Recommendations
+
+Narrative and Recommendations\
+
+Based on the Cumulative Gains analysis and the insights that we got from the models, we propose the following actions:
+
+- **Efficiency Strategy (Stop "Spray and Pray"):** The Cumulative Gains chart displays a steep curve where the top 20% of sessions (ranked by the model) account for the vast majority of conversions.\
+
+- **Recommendation:** We can cut retargeting ad spend by ignoring the bottom 80% of visitors while still retaining the majority of revenue. Marketing resources should be concentrated solely on the top 2 deciles.\
+
+"Special Day" Campaigns:\
+
+- **Recommendation:** Given the **16.9%** increase in purchase odds near holidays identified by the Logistic Regression, the marketing team should launch aggressive, short-term campaigns in the window leading up to major holidays. The data proves users are primed to buy during these periods.\
+
+Real-Time "Friction" Intervention:\
+
+- **Recommendation:** Since `PageValues` is a real-time metric, we should deploy the model directly on the website. If a user's score crosses the optimal threshold but they display "exit behavior" the site should trigger an immediate "Save the Sale" popup, like free shipping. This targets high-intent users at the exact moment of friction.
+
+
+# 7. References
+Data Source: Sakar, C. O., & Kastro, Y. (2018). Online Shoppers Purchasing Intention Dataset. UCI Machine Learning Repository. https://archive.ics.uci.edu/dataset/468/online+shoppers+purchasing+intention+dataset. Accessed on: December 7, 2025.
+
+AI Assistance:
+
+Gemini (December 2025 version) [Large Language Model]. Retrieved from https://gemini.google.com
+
+OpenAI. (2025). ChatGPT (GPT-3.5) [Large language model]. Retrieved from https://chat.openai.com
+
+```{r}
+#| echo: false
+#| results: asis
+
+# 1. Get R Version
+cite.version <- R.Version()
+pip <- as.character(cite.version$version.string)
+
+# 2. Get Package List dynamically
+# We use sessionInfo() to get only the packages currently attached to the session
+pkg_list <- names(sessionInfo()$otherPkgs)
+pkg_versions <- sapply(pkg_list, function(x) as.character(packageVersion(x)))
+
+# 3. Create Dataframe
+pkg_df <- data.frame(
+  Package = pkg_list,
+  Version = pkg_versions
+)
+
+# 4. Render as Flextable (Professional Look)
+cat("\n**Software and Libraries**\n")
+cat(paste("Analysis performed using:", pip, "\n\n"))
+
+pkg_df %>%
+  arrange(Package) %>% # Sort alphabetically
+  flextable() %>%
+  set_header_labels(Package = "R Package", Version = "Version") %>%
+  theme_vanilla() %>%
+  autofit() %>%
+  set_caption("Table 7: R Packages Used for Analysis")
+
+```
+

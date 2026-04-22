@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.4.553">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Erick Xavier Maldonado">
+
+<title>Online Shoppers Purchasing Intention</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<link href="index_files/libs/tabwid-1.1.3/tabwid.css" rel="stylesheet">
+
+<script src="index_files/libs/tabwid-1.1.3/tabwid.js"></script>
+
+
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#business-understanding" id="toc-business-understanding" class="nav-link active" data-scroll-target="#business-understanding">1. Business Understanding</a></li>
+  <li><a href="#data-understanding-and-preparation" id="toc-data-understanding-and-preparation" class="nav-link" data-scroll-target="#data-understanding-and-preparation">2. Data Understanding and Preparation</a></li>
+  <li><a href="#data-preparation" id="toc-data-preparation" class="nav-link" data-scroll-target="#data-preparation">3. Data Preparation</a>
+  <ul class="collapse">
+  <li><a href="#feature-engineering-cleaning" id="toc-feature-engineering-cleaning" class="nav-link" data-scroll-target="#feature-engineering-cleaning">Feature Engineering &amp; Cleaning</a></li>
+  <li><a href="#partitioning-7030" id="toc-partitioning-7030" class="nav-link" data-scroll-target="#partitioning-7030">Partitioning (70/30)</a></li>
+  </ul></li>
+  <li><a href="#model-development" id="toc-model-development" class="nav-link" data-scroll-target="#model-development">4. Model Development</a>
+  <ul class="collapse">
+  <li><a href="#model-1-logistic-regression" id="toc-model-1-logistic-regression" class="nav-link" data-scroll-target="#model-1-logistic-regression">Model 1: Logistic Regression</a></li>
+  <li><a href="#model-2-decision-tree-cart" id="toc-model-2-decision-tree-cart" class="nav-link" data-scroll-target="#model-2-decision-tree-cart">Model 2: Decision Tree (CART)</a></li>
+  <li><a href="#model-3-random-forest-ensemble" id="toc-model-3-random-forest-ensemble" class="nav-link" data-scroll-target="#model-3-random-forest-ensemble">Model 3: Random Forest (Ensemble)</a></li>
+  </ul></li>
+  <li><a href="#model-evaluation" id="toc-model-evaluation" class="nav-link" data-scroll-target="#model-evaluation">5. Model Evaluation</a>
+  <ul class="collapse">
+  <li><a href="#cumulative-gains-chart-best-model" id="toc-cumulative-gains-chart-best-model" class="nav-link" data-scroll-target="#cumulative-gains-chart-best-model">Cumulative Gains Chart (Best Model)</a></li>
+  </ul></li>
+  <li><a href="#deployment-and-recommendations" id="toc-deployment-and-recommendations" class="nav-link" data-scroll-target="#deployment-and-recommendations">6. Deployment and Recommendations</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">7. References</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Online Shoppers Purchasing Intention</h1>
+<p class="subtitle lead">Classification Analysis</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Erick Xavier Maldonado </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="business-understanding" class="level1">
+<h1>1. Business Understanding</h1>
+<p>In the e-commerce sector, marketing budgets are often wasted on “window shoppers”, users who browse without intent to purchase. The following analysis focuses on a dataset of 12,330 distinct user sessions over a one-year period. By ensuring each session belongs to a different user, we avoid biases related to specific campaigns or user profiles.</p>
+<p>Currently, the vast majority of sessions representing a 84.5% do not result in a transaction. Treating all visitors equally leads to inefficient resource allocation. The marketing team aims to shift from a “spray and pray” strategy to a precision-based approach, targeting only those with a high probability of conversion.</p>
+<p><strong>Research Questions:</strong></p>
+<ol type="1">
+<li><p><strong>Behavioral Intent:</strong> Can we accurately distinguish between a “bouncer” and a “buyer” using engagement metrics like PageValues and ExitRates?</p></li>
+<li><p><strong>The “Special Day” Effect:</strong> Does the proximity to a special event, like Valentine’s Day for example, significantly alter purchasing probability, justifying specific holiday campaigns?</p></li>
+</ol>
+</section>
+<section id="data-understanding-and-preparation" class="level1">
+<h1>2. Data Understanding and Preparation</h1>
+<p>The dataset <strong>online_shoppers_intention_classification.csv</strong> sourced from the UCI Machine Learning Repository contains 12,330 observations.</p>
+<p><strong>Dataset Characteristics:</strong></p>
+<ul>
+<li><p><strong>Imbalance:</strong> 10,422 (84.5%) sessions are Negative (No Purchase), while 1,908 (15.5%) are Positive (Purchase).<br>
+</p></li>
+<li><p><strong>Features:</strong> There are 10 numerical attributes (including Google Analytics metrics) and 8 categorical/binary attributes.<br>
+</p></li>
+<li><p><strong>Missing Values:</strong> The dataset contains no missing values.<br>
+</p></li>
+</ul>
+<div class="cell">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-f616347a{}.cl-f60c47f8{font-family:'Arial';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f60c480c{font-family:'Arial';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f6109b3c{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f610b932{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b93c{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b93d{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b946{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b947{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b948{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b950{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b95a{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b964{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b965{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b96e{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b96f{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b978{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b979{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b982{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b983{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b984{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b98c{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b98d{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b996{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b9a0{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b9a1{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b9aa{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b9ab{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b9b4{width:1.984in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b9b5{width:0.922in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f610b9b6{width:1.457in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f616347a"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f610b932"><p class="cl-f6109b3c"><span class="cl-f60c47f8">Variable</span></p></th><th class="cl-f610b93c"><p class="cl-f6109b3c"><span class="cl-f60c47f8">Type</span></p></th><th class="cl-f610b93d"><p class="cl-f6109b3c"><span class="cl-f60c47f8">Example</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f610b946"><p class="cl-f6109b3c"><span class="cl-f60c480c">administrative</span></p></td><td class="cl-f610b947"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b948"><p class="cl-f6109b3c"><span class="cl-f60c480c">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b950"><p class="cl-f6109b3c"><span class="cl-f60c480c">administrative_duration</span></p></td><td class="cl-f610b95a"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b964"><p class="cl-f6109b3c"><span class="cl-f60c480c">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b965"><p class="cl-f6109b3c"><span class="cl-f60c480c">informational</span></p></td><td class="cl-f610b96e"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b96f"><p class="cl-f6109b3c"><span class="cl-f60c480c">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b978"><p class="cl-f6109b3c"><span class="cl-f60c480c">informational_duration</span></p></td><td class="cl-f610b979"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b982"><p class="cl-f6109b3c"><span class="cl-f60c480c">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b950"><p class="cl-f6109b3c"><span class="cl-f60c480c">product_related</span></p></td><td class="cl-f610b95a"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b964"><p class="cl-f6109b3c"><span class="cl-f60c480c">1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b950"><p class="cl-f6109b3c"><span class="cl-f60c480c">product_related_duration</span></p></td><td class="cl-f610b95a"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b964"><p class="cl-f6109b3c"><span class="cl-f60c480c">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b950"><p class="cl-f6109b3c"><span class="cl-f60c480c">bounce_rates</span></p></td><td class="cl-f610b95a"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b964"><p class="cl-f6109b3c"><span class="cl-f60c480c">0.2</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b950"><p class="cl-f6109b3c"><span class="cl-f60c480c">exit_rates</span></p></td><td class="cl-f610b95a"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b964"><p class="cl-f6109b3c"><span class="cl-f60c480c">0.2</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b983"><p class="cl-f6109b3c"><span class="cl-f60c480c">page_values</span></p></td><td class="cl-f610b984"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b98c"><p class="cl-f6109b3c"><span class="cl-f60c480c">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b983"><p class="cl-f6109b3c"><span class="cl-f60c480c">special_day</span></p></td><td class="cl-f610b984"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b98c"><p class="cl-f6109b3c"><span class="cl-f60c480c">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b98d"><p class="cl-f6109b3c"><span class="cl-f60c480c">month</span></p></td><td class="cl-f610b996"><p class="cl-f6109b3c"><span class="cl-f60c480c">character</span></p></td><td class="cl-f610b9a0"><p class="cl-f6109b3c"><span class="cl-f60c480c">Feb</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b983"><p class="cl-f6109b3c"><span class="cl-f60c480c">operating_systems</span></p></td><td class="cl-f610b984"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b98c"><p class="cl-f6109b3c"><span class="cl-f60c480c">1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b98d"><p class="cl-f6109b3c"><span class="cl-f60c480c">browser</span></p></td><td class="cl-f610b996"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b9a0"><p class="cl-f6109b3c"><span class="cl-f60c480c">1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b983"><p class="cl-f6109b3c"><span class="cl-f60c480c">region</span></p></td><td class="cl-f610b984"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b98c"><p class="cl-f6109b3c"><span class="cl-f60c480c">1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b9a1"><p class="cl-f6109b3c"><span class="cl-f60c480c">traffic_type</span></p></td><td class="cl-f610b9aa"><p class="cl-f6109b3c"><span class="cl-f60c480c">double</span></p></td><td class="cl-f610b9ab"><p class="cl-f6109b3c"><span class="cl-f60c480c">1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b983"><p class="cl-f6109b3c"><span class="cl-f60c480c">visitor_type</span></p></td><td class="cl-f610b984"><p class="cl-f6109b3c"><span class="cl-f60c480c">character</span></p></td><td class="cl-f610b98c"><p class="cl-f6109b3c"><span class="cl-f60c480c">Returning_Visitor</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b983"><p class="cl-f6109b3c"><span class="cl-f60c480c">weekend</span></p></td><td class="cl-f610b984"><p class="cl-f6109b3c"><span class="cl-f60c480c">logical</span></p></td><td class="cl-f610b98c"><p class="cl-f6109b3c"><span class="cl-f60c480c">FALSE</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f610b9b4"><p class="cl-f6109b3c"><span class="cl-f60c480c">revenue</span></p></td><td class="cl-f610b9b5"><p class="cl-f6109b3c"><span class="cl-f60c480c">logical</span></p></td><td class="cl-f610b9b6"><p class="cl-f6109b3c"><span class="cl-f60c480c">FALSE</span></p></td></tr></tbody></table></div>
+</div>
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-f6320c36{}.cl-f62a7516{font-family:'Arial';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f62a752a{font-family:'Arial';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f62d980e{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f62db9ec{width:1.372in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62db9f6{width:0.752in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62dba00{width:1.066in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62dba0a{width:1.372in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62dba0b{width:0.752in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62dba0c{width:1.066in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62dba14{width:1.372in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62dba15{width:0.752in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f62dba1e{width:1.066in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f6320c36"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f62db9ec"><p class="cl-f62d980e"><span class="cl-f62a7516">Revenue Class</span></p></th><th class="cl-f62db9f6"><p class="cl-f62d980e"><span class="cl-f62a7516">Count</span></p></th><th class="cl-f62dba00"><p class="cl-f62d980e"><span class="cl-f62a7516">Proportion</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f62dba0a"><p class="cl-f62d980e"><span class="cl-f62a752a">FALSE</span></p></td><td class="cl-f62dba0b"><p class="cl-f62d980e"><span class="cl-f62a752a">10,422</span></p></td><td class="cl-f62dba0c"><p class="cl-f62d980e"><span class="cl-f62a752a">0.8453</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f62dba14"><p class="cl-f62d980e"><span class="cl-f62a752a">TRUE</span></p></td><td class="cl-f62dba15"><p class="cl-f62d980e"><span class="cl-f62a752a">1,908</span></p></td><td class="cl-f62dba1e"><p class="cl-f62d980e"><span class="cl-f62a752a">0.1547</span></p></td></tr></tbody></table></div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-2-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-2-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The exploratory analysis reveals significant outliers in <code>ProductRelated_Duration</code> and <code>PageValues</code>, which are heavily right-skewed. Rather than removing these data points, which likely represent high-value customer behaviors, we will retain them and apply a log transformation during the Data Preparation phase.</p>
+</section>
+<section id="data-preparation" class="level1">
+<h1>3. Data Preparation</h1>
+<section id="feature-engineering-cleaning" class="level3">
+<h3 class="anchored" data-anchor-id="feature-engineering-cleaning">Feature Engineering &amp; Cleaning</h3>
+<p>As per the dataset description, several variables, like <code>Region</code>, <code>TrafficType</code>, <code>OperatingSystems</code>, <code>Browser</code> are encoded as integers but represent nominal categories. To ensure clarity in our model output we will:</p>
+<ul>
+<li><p><strong>Prefix Method:</strong> Rename integer levels for example, <code>1 -&gt; Region_1</code> to prevent the model from treating them mathematically.</p></li>
+<li><p><strong>Log Transformation:</strong> Apply log transformations to the skewed Duration and PageValue metrics.</p></li>
+</ul>
+<p>Factor Conversion: Ensure <code>Weekend</code> and <code>Revenue</code> are proper factors.<br>
+</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-f7cfb0fc{}.cl-f7c3d16a{font-family:'Arial';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f7c3d17e{font-family:'Arial';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-f7c7d13e{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f7c7d152{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-f7c7ed22{width:0.939in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed2c{width:1.109in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed2d{width:1.279in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed2e{width:0.871in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed36{width:1.516in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed37{width:0.939in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed38{width:1.109in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed40{width:1.279in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed41{width:0.871in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed4a{width:1.516in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed4b{width:0.939in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed54{width:1.109in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed55{width:1.279in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed5e{width:0.871in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed5f{width:1.516in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed60{width:0.939in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed68{width:1.109in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed69{width:1.279in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed72{width:0.871in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-f7c7ed73{width:1.516in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-f7cfb0fc"><thead><tr style="overflow-wrap:break-word;"><th class="cl-f7c7ed22"><p class="cl-f7c7d13e"><span class="cl-f7c3d16a">region</span></p></th><th class="cl-f7c7ed2c"><p class="cl-f7c7d13e"><span class="cl-f7c3d16a">traffic_type</span></p></th><th class="cl-f7c7ed2d"><p class="cl-f7c7d13e"><span class="cl-f7c3d16a">weekend</span></p></th><th class="cl-f7c7ed2e"><p class="cl-f7c7d13e"><span class="cl-f7c3d16a">revenue</span></p></th><th class="cl-f7c7ed36"><p class="cl-f7c7d152"><span class="cl-f7c3d16a">log_page_values</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-f7c7ed37"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Region_1</span></p></td><td class="cl-f7c7ed38"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Source_1</span></p></td><td class="cl-f7c7ed40"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Weekend_No</span></p></td><td class="cl-f7c7ed41"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">No</span></p></td><td class="cl-f7c7ed4a"><p class="cl-f7c7d152"><span class="cl-f7c3d17e">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f7c7ed4b"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Region_1</span></p></td><td class="cl-f7c7ed54"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Source_2</span></p></td><td class="cl-f7c7ed55"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Weekend_No</span></p></td><td class="cl-f7c7ed5e"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">No</span></p></td><td class="cl-f7c7ed5f"><p class="cl-f7c7d152"><span class="cl-f7c3d17e">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f7c7ed4b"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Region_9</span></p></td><td class="cl-f7c7ed54"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Source_3</span></p></td><td class="cl-f7c7ed55"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Weekend_No</span></p></td><td class="cl-f7c7ed5e"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">No</span></p></td><td class="cl-f7c7ed5f"><p class="cl-f7c7d152"><span class="cl-f7c3d17e">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f7c7ed4b"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Region_2</span></p></td><td class="cl-f7c7ed54"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Source_4</span></p></td><td class="cl-f7c7ed55"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Weekend_No</span></p></td><td class="cl-f7c7ed5e"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">No</span></p></td><td class="cl-f7c7ed5f"><p class="cl-f7c7d152"><span class="cl-f7c3d17e">0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-f7c7ed60"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Region_1</span></p></td><td class="cl-f7c7ed68"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Source_4</span></p></td><td class="cl-f7c7ed69"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">Weekend_Yes</span></p></td><td class="cl-f7c7ed72"><p class="cl-f7c7d13e"><span class="cl-f7c3d17e">No</span></p></td><td class="cl-f7c7ed73"><p class="cl-f7c7d152"><span class="cl-f7c3d17e">0</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+</section>
+<section id="partitioning-7030" class="level3">
+<h3 class="anchored" data-anchor-id="partitioning-7030">Partitioning (70/30)</h3>
+<p>We use a 70/30 split to create Training and Validation sets.<br>
+</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Training Set Class Balance</caption>
+<thead>
+<tr class="header">
+<th style="text-align: center;">Revenue Class</th>
+<th style="text-align: center;">Proportion</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">0.8452</td>
+</tr>
+<tr class="even">
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">0.1548</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</section>
+<section id="model-development" class="level1">
+<h1>4. Model Development</h1>
+<p>We will train three models. Given the 15.5% positive class rate, we will apply Class Weights to the Decision Tree and Random Forest to penalize misclassification of the minority class.</p>
+<section id="model-1-logistic-regression" class="level2">
+<h2 class="anchored" data-anchor-id="model-1-logistic-regression">Model 1: Logistic Regression</h2>
+<p>The Logistic Regression model offers the most interpretable look at the specific “drivers” of purchase behavior.<br>
+</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-fcdd06e4{}.cl-fcd48ac8{font-family:'Arial';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-fcd48adc{font-family:'Arial';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-fcd815e4{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fcd815ee{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-fcd82d22{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d2c{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d36{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d37{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d38{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d40{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d4a{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d4b{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d4c{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d54{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d55{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d5e{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d68{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d72{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d73{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d7c{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d86{width:1.347in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(255, 255, 255, 0.00);border-top: 0 solid rgba(255, 255, 255, 0.00);border-left: 0 solid rgba(255, 255, 255, 0.00);border-right: 0 solid rgba(255, 255, 255, 0.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-fcd82d90{width:1.1in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(255, 255, 255, 0.00);border-top: 0 solid rgba(255, 255, 255, 0.00);border-left: 0 solid rgba(255, 255, 255, 0.00);border-right: 0 solid rgba(255, 255, 255, 0.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-fcdd06e4"><thead><tr style="overflow-wrap:break-word;"><th class="cl-fcd82d22"><p class="cl-fcd815e4"><span class="cl-fcd48ac8">Variable</span></p></th><th class="cl-fcd82d2c"><p class="cl-fcd815ee"><span class="cl-fcd48ac8">Odds Ratio</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d36"><p class="cl-fcd815e4"><span class="cl-fcd48adc">(Intercept)</span></p></td><td class="cl-fcd82d37"><p class="cl-fcd815ee"><span class="cl-fcd48adc">0.1405</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d38"><p class="cl-fcd815e4"><span class="cl-fcd48adc">administrative</span></p></td><td class="cl-fcd82d40"><p class="cl-fcd815ee"><span class="cl-fcd48adc">0.9309</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d4a"><p class="cl-fcd815e4"><span class="cl-fcd48adc">informational</span></p></td><td class="cl-fcd82d4b"><p class="cl-fcd815ee"><span class="cl-fcd48adc">1.0220</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d4c"><p class="cl-fcd815e4"><span class="cl-fcd48adc">product_related</span></p></td><td class="cl-fcd82d54"><p class="cl-fcd815ee"><span class="cl-fcd48adc">1.0048</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d4c"><p class="cl-fcd815e4"><span class="cl-fcd48adc">bounce_rates</span></p></td><td class="cl-fcd82d54"><p class="cl-fcd815ee"><span class="cl-fcd48adc">0.0048</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d4c"><p class="cl-fcd815e4"><span class="cl-fcd48adc">exit_rates</span></p></td><td class="cl-fcd82d54"><p class="cl-fcd815ee"><span class="cl-fcd48adc">0.0001</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d55"><p class="cl-fcd815e4"><span class="cl-fcd48adc">special_day</span></p></td><td class="cl-fcd82d5e"><p class="cl-fcd815ee"><span class="cl-fcd48adc">1.1690</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d38"><p class="cl-fcd815e4"><span class="cl-fcd48adc">monthDec</span></p></td><td class="cl-fcd82d40"><p class="cl-fcd815ee"><span class="cl-fcd48adc">0.5231</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d68"><p class="cl-fcd815e4"><span class="cl-fcd48adc">monthFeb</span></p></td><td class="cl-fcd82d72"><p class="cl-fcd815ee"><span class="cl-fcd48adc">0.1565</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-fcd82d73"><p class="cl-fcd815e4"><span class="cl-fcd48adc">monthJul</span></p></td><td class="cl-fcd82d7c"><p class="cl-fcd815ee"><span class="cl-fcd48adc">1.1828</span></p></td></tr></tbody><tfoot><tr style="overflow-wrap:break-word;"><td colspan="2" class="cl-fcd82d86"><p class="cl-fcd815e4"><span class="cl-fcd48adc">Model Fit Statistic: AIC = 4412.51</span></p></td></tr></tfoot></table></div>
+</div>
+</div>
+<p>The model was fitted using all available predictors, <strong>AIC = 4412.51</strong>. While some individual categorical levels showed lower significance, we retained the full feature set (no trimming) to preserve the interpretability of all Traffic Sources and Months for the business stakeholders.</p>
+<ul>
+<li><p><strong>Friction is the Enemy:</strong> The most significant finding is the extreme negative impact of <code>ExitRates</code>, Odds Ratio <span class="math inline">\(\approx\)</span> 0.0001 and <code>BounceRates</code>, Odds Ratio <span class="math inline">\(\approx\)</span> 0.0048. This statistically confirms that users who demonstrate “leaving behavior” or single-page sessions are virtually guaranteed not to buy.<br>
+</p></li>
+<li><p><strong>The “Special Day” Effect:</strong> Addressing Research Question 2, the <code>SpecialDay</code> variable has an Odds Ratio of <strong>1.16911</strong>. This indicates that for every unit increase in closeness to a special holiday, the odds of a purchase increase by approximately <strong>16.9%</strong>, holding everything else constant.<br>
+</p></li>
+<li><p><strong>Seasonality:</strong> Seasonality plays a measurable role, for example, July with a OR = 1.18 shows a higher likelihood of conversion, while February, OR = 0.15 shows a significantly lower likelihood compared to the baseline.<br>
+</p></li>
+</ul>
+</section>
+<section id="model-2-decision-tree-cart" class="level2">
+<h2 class="anchored" data-anchor-id="model-2-decision-tree-cart">Model 2: Decision Tree (CART)</h2>
+<p>We include <code>weights = model_weights</code> to force the tree to prioritize the 1,908 positive cases.<br>
+The Decision Tree simplifies the user journey into hierarchical rules.<br>
+</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>The tree was optimized using cross-validation. he final selected model used a CP of 0.00599, which balanced tree depth, which balanced tree depth against predictive accuracy.</p>
+<ul>
+<li><p><strong>The “Golden Rule” of Page Value:</strong> The root node split confirms that <code>log_page_values</code> is the single most important discriminator. The tree splits first on whether <code>log_page_values</code> is less than <strong>0.032.</strong><br>
+</p></li>
+<li><p><strong>The “Window Shopper” Path:</strong> If a user has a low Page Value, left branch, the model immediately categorizes them into a node where the probability of purchase drops to <strong>10% or less.</strong><br>
+</p></li>
+<li><p><strong>The “Buyer” Path:</strong> If the Page Value is high (right branch), the model identifies a high-intent segment where the probability of purchase jumps to <strong>46% or higher.</strong><br>
+</p></li>
+</ul>
+</section>
+<section id="model-3-random-forest-ensemble" class="level2">
+<h2 class="anchored" data-anchor-id="model-3-random-forest-ensemble">Model 3: Random Forest (Ensemble)</h2>
+<p>Random Forest is ideal for handling the 17 features, including the high-cardinality categorical variables like <code>TrafficType</code> and <code>Region</code>.<br>
+</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-08869d20{}.cl-087e4288{font-family:'Arial';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-087e4292{font-family:'Arial';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-0881cc6e{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-0881cc78{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-0881e28a{width:0.752in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-0881e294{width:1.049in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-0881e29e{width:0.752in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-0881e29f{width:1.049in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-0881e2a8{width:0.752in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-0881e2b2{width:1.049in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-0881e2b3{width:0.752in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(255, 255, 255, 0.00);border-top: 0 solid rgba(255, 255, 255, 0.00);border-left: 0 solid rgba(255, 255, 255, 0.00);border-right: 0 solid rgba(255, 255, 255, 0.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-0881e2bc{width:1.049in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(255, 255, 255, 0.00);border-top: 0 solid rgba(255, 255, 255, 0.00);border-left: 0 solid rgba(255, 255, 255, 0.00);border-right: 0 solid rgba(255, 255, 255, 0.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-08869d20"><thead><tr style="overflow-wrap:break-word;"><th class="cl-0881e28a"><p class="cl-0881cc6e"><span class="cl-087e4288">mtry</span></p></th><th class="cl-0881e28a"><p class="cl-0881cc6e"><span class="cl-087e4288">ROC</span></p></th><th class="cl-0881e294"><p class="cl-0881cc6e"><span class="cl-087e4288">Sensitivity</span></p></th><th class="cl-0881e294"><p class="cl-0881cc6e"><span class="cl-087e4288">Specificity</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-0881e29e"><p class="cl-0881cc6e"><span class="cl-087e4292">4.0000</span></p></td><td class="cl-0881e29e"><p class="cl-0881cc6e"><span class="cl-087e4292">0.9077</span></p></td><td class="cl-0881e29f"><p class="cl-0881cc6e"><span class="cl-087e4292">0.9886</span></p></td><td class="cl-0881e29f"><p class="cl-0881cc6e"><span class="cl-087e4292">0.3024</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-0881e2a8"><p class="cl-0881cc6e"><span class="cl-087e4292">8.0000</span></p></td><td class="cl-0881e2a8"><p class="cl-0881cc6e"><span class="cl-087e4292">0.9176</span></p></td><td class="cl-0881e2b2"><p class="cl-0881cc6e"><span class="cl-087e4292">0.9685</span></p></td><td class="cl-0881e2b2"><p class="cl-0881cc6e"><span class="cl-087e4292">0.5382</span></p></td></tr></tbody><tfoot><tr style="overflow-wrap:break-word;"><td colspan="4" class="cl-0881e2b3"><p class="cl-0881cc78"><span class="cl-087e4292">The final selected model used mtry = 8</span></p></td></tr></tfoot></table></div>
+</div>
+</div>
+<p>The Random Forest was employed to capture complex non-linear interactions between the 17 features. The model was tuned using 5-fold cross-validation, selecting an optimal <code>mtry</code> of 8.<br>
+</p>
+</section>
+</section>
+<section id="model-evaluation" class="level1">
+<h1>5. Model Evaluation</h1>
+<p>To address the business requirement of “Efficiency,” we cannot use a default 50% cutoff. We must use Threshold Tuning to find the optimal probability cutoff that balances Sensitivity (catching buyers) and Specificity (avoiding window shoppers).<br>
+</p>
+<div class="cell">
+<div class="cell-output-display">
+<div class="tabwid"><style>.cl-08db702a{}.cl-08d288ac{font-family:'Arial';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-08d59588{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-08d59592{margin:0;text-align:right;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-08d5a8d4{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-08d5a8de{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-08d5a8df{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-08d5a8e8{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-08d5a8f2{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-08d5a8f3{width:0.75in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-08db702a"><thead><tr style="overflow-wrap:break-word;"><th class="cl-08d5a8d4"><p class="cl-08d59588"><span class="cl-08d288ac">Model</span></p></th><th class="cl-08d5a8de"><p class="cl-08d59592"><span class="cl-08d288ac">AUC</span></p></th><th class="cl-08d5a8de"><p class="cl-08d59592"><span class="cl-08d288ac">Threshold</span></p></th><th class="cl-08d5a8de"><p class="cl-08d59592"><span class="cl-08d288ac">Accuracy</span></p></th><th class="cl-08d5a8de"><p class="cl-08d59592"><span class="cl-08d288ac">Sensitivity</span></p></th><th class="cl-08d5a8de"><p class="cl-08d59592"><span class="cl-08d288ac">Specificity</span></p></th><th class="cl-08d5a8de"><p class="cl-08d59592"><span class="cl-08d288ac">F1</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-08d5a8df"><p class="cl-08d59588"><span class="cl-08d288ac">Logistic Regression</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.924</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.145</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.868</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.830</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.875</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.660</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-08d5a8df"><p class="cl-08d59588"><span class="cl-08d288ac">Random Forest</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.919</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.230</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.876</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.815</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.888</span></p></td><td class="cl-08d5a8e8"><p class="cl-08d59592"><span class="cl-08d288ac">0.671</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-08d5a8f2"><p class="cl-08d59588"><span class="cl-08d288ac">Decision Tree</span></p></td><td class="cl-08d5a8f3"><p class="cl-08d59592"><span class="cl-08d288ac">0.899</span></p></td><td class="cl-08d5a8f3"><p class="cl-08d59592"><span class="cl-08d288ac">0.422</span></p></td><td class="cl-08d5a8f3"><p class="cl-08d59592"><span class="cl-08d288ac">0.836</span></p></td><td class="cl-08d5a8f3"><p class="cl-08d59592"><span class="cl-08d288ac">0.888</span></p></td><td class="cl-08d5a8f3"><p class="cl-08d59592"><span class="cl-08d288ac">0.826</span></p></td><td class="cl-08d5a8f3"><p class="cl-08d59592"><span class="cl-08d288ac">0.626</span></p></td></tr></tbody></table></div>
+</div>
+</div>
+<p>In order to select the best model for deployment, we compared the three models using Threshold Tuning to maximize the F1 Score.<br>
+</p>
+<ul>
+<li><strong>We have a Winner:</strong> The Random Forest model is selected as the champion. It achieved the highest F1 Score <strong>(0.671)</strong>, indicating it provides the best balance between catching true buyers and avoiding false alarms.<br>
+</li>
+</ul>
+<p>Performance Metrics:</p>
+<ul>
+<li><p><strong>Discriminatory Power:</strong> The Random Forest achieved an AUC of 0.919, comparable to the Logistic Regression’s 0.924. This confirms the model is excellent at ranking customers from “most likely” to “least likely” to buy.<br>
+</p></li>
+<li><p><strong>Sensitivity:</strong> With a Sensitivity of 0.815, the model successfully identifies 81.5% of all actual buyers.<br>
+</p></li>
+<li><p><strong>Rationale:</strong> Although Logistic Regression had a marginally higher AUC, the Random Forest demonstrated a better F1 score. This suggests it is more robust at handling the complex interactions between categorical variables, like <code>TrafficType</code> and <code>Region</code> without overfitting.</p></li>
+</ul>
+<section id="cumulative-gains-chart-best-model" class="level3">
+<h3 class="anchored" data-anchor-id="cumulative-gains-chart-best-model">Cumulative Gains Chart (Best Model)</h3>
+<p>The Random Forest typically yields the best AUC. We plot the Gains chart to visualize the “Lift” provided by the Google Analytics metrics.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<ul>
+<li><p>The blue model line rises extremely sharply at the beginning. This indicates that the customers the model ranked as “highest probability” are the actual buyers.</p></li>
+<li><p>By targeting approximately the top 1,000 cases, roughly about the top 30% of the test population, the model captures nearly 90% of all available conversions, where the curve begins to flatten.</p></li>
+<li><p>The “flat” part of the blue curve represents the majority of site visitors who are “window shoppers.” Retargeting these users wastes budget because they do not contribute. The chart proves we can safely stop marketing to the bottom 70% of visitors while still capturing the vast majority of revenue.</p></li>
+</ul>
+</section>
+</section>
+<section id="deployment-and-recommendations" class="level1">
+<h1>6. Deployment and Recommendations</h1>
+<p>Narrative and Recommendations<br>
+</p>
+<p>Based on the Cumulative Gains analysis and the insights that we got from the models, we propose the following actions:</p>
+<ul>
+<li><p><strong>Efficiency Strategy (Stop “Spray and Pray”):</strong> The Cumulative Gains chart displays a steep curve where the top 20% of sessions (ranked by the model) account for the vast majority of conversions.<br>
+</p></li>
+<li><p><strong>Recommendation:</strong> We can cut retargeting ad spend by ignoring the bottom 80% of visitors while still retaining the majority of revenue. Marketing resources should be concentrated solely on the top 2 deciles.<br>
+</p></li>
+</ul>
+<p>“Special Day” Campaigns:<br>
+</p>
+<ul>
+<li><strong>Recommendation:</strong> Given the <strong>16.9%</strong> increase in purchase odds near holidays identified by the Logistic Regression, the marketing team should launch aggressive, short-term campaigns in the window leading up to major holidays. The data proves users are primed to buy during these periods.<br>
+</li>
+</ul>
+<p>Real-Time “Friction” Intervention:<br>
+</p>
+<ul>
+<li><strong>Recommendation:</strong> Since <code>PageValues</code> is a real-time metric, we should deploy the model directly on the website. If a user’s score crosses the optimal threshold but they display “exit behavior” the site should trigger an immediate “Save the Sale” popup, like free shipping. This targets high-intent users at the exact moment of friction.</li>
+</ul>
+</section>
+<section id="references" class="level1">
+<h1>7. References</h1>
+<p>Data Source: Sakar, C. O., &amp; Kastro, Y. (2018). Online Shoppers Purchasing Intention Dataset. UCI Machine Learning Repository. https://archive.ics.uci.edu/dataset/468/online+shoppers+purchasing+intention+dataset. Accessed on: December 7, 2025.</p>
+<p>AI Assistance:</p>
+<p>Gemini (December 2025 version) [Large Language Model]. Retrieved from https://gemini.google.com</p>
+<p>OpenAI. (2025). ChatGPT (GPT-3.5) [Large language model]. Retrieved from https://chat.openai.com</p>
+<p><strong>Software and Libraries</strong> Analysis performed using: R version 4.3.2 (2023-10-31 ucrt)</p>
+<div class="tabwid"><style>.cl-09215a18{}.cl-0918d0dc{font-family:'Arial';font-size:11pt;font-weight:bold;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-0918d0e6{font-family:'Arial';font-size:11pt;font-weight:normal;font-style:normal;text-decoration:none;color:rgba(0, 0, 0, 1.00);background-color:transparent;}.cl-091c4f78{margin:0;text-align:left;border-bottom: 0 solid rgba(0, 0, 0, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);padding-bottom:5pt;padding-top:5pt;padding-left:5pt;padding-right:5pt;line-height: 1;background-color:transparent;}.cl-091c6738{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c674c{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 1.5pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c674d{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c6760{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0 solid rgba(0, 0, 0, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c6761{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c6762{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c676a{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c676b{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c6774{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c6775{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c677e{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c6788{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c6789{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c679c{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c679d{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67a6{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67a7{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67a8{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67b0{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67b1{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67b2{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67ba{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 0.75pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67bb{width:1.236in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}.cl-091c67c4{width:0.846in;background-color:transparent;vertical-align: middle;border-bottom: 1.5pt solid rgba(102, 102, 102, 1.00);border-top: 0.75pt solid rgba(102, 102, 102, 1.00);border-left: 0 solid rgba(0, 0, 0, 1.00);border-right: 0 solid rgba(0, 0, 0, 1.00);margin-bottom:0;margin-top:0;margin-left:0;margin-right:0;}</style><table data-quarto-disable-processing="true" class="cl-09215a18"><thead><tr style="overflow-wrap:break-word;"><th class="cl-091c6738"><p class="cl-091c4f78"><span class="cl-0918d0dc">R Package</span></p></th><th class="cl-091c674c"><p class="cl-091c4f78"><span class="cl-0918d0dc">Version</span></p></th></tr></thead><tbody><tr style="overflow-wrap:break-word;"><td class="cl-091c674d"><p class="cl-091c4f78"><span class="cl-0918d0e6">DataExplorer</span></p></td><td class="cl-091c6760"><p class="cl-091c4f78"><span class="cl-0918d0e6">0.8.2</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6761"><p class="cl-091c4f78"><span class="cl-0918d0e6">caret</span></p></td><td class="cl-091c6762"><p class="cl-091c4f78"><span class="cl-0918d0e6">6.0.94</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6761"><p class="cl-091c4f78"><span class="cl-0918d0e6">dlookr</span></p></td><td class="cl-091c6762"><p class="cl-091c4f78"><span class="cl-0918d0e6">0.6.5</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c676a"><p class="cl-091c4f78"><span class="cl-0918d0e6">dplyr</span></p></td><td class="cl-091c676b"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.1.4</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6774"><p class="cl-091c4f78"><span class="cl-0918d0e6">flextable</span></p></td><td class="cl-091c6775"><p class="cl-091c4f78"><span class="cl-0918d0e6">0.9.4</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6774"><p class="cl-091c4f78"><span class="cl-0918d0e6">forcats</span></p></td><td class="cl-091c6775"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.0.0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c676a"><p class="cl-091c4f78"><span class="cl-0918d0e6">gains</span></p></td><td class="cl-091c676b"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.2</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c677e"><p class="cl-091c4f78"><span class="cl-0918d0e6">ggplot2</span></p></td><td class="cl-091c6788"><p class="cl-091c4f78"><span class="cl-0918d0e6">4.0.0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c676a"><p class="cl-091c4f78"><span class="cl-0918d0e6">janitor</span></p></td><td class="cl-091c676b"><p class="cl-091c4f78"><span class="cl-0918d0e6">2.2.1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6761"><p class="cl-091c4f78"><span class="cl-0918d0e6">lattice</span></p></td><td class="cl-091c6762"><p class="cl-091c4f78"><span class="cl-0918d0e6">0.21.9</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6789"><p class="cl-091c4f78"><span class="cl-0918d0e6">lubridate</span></p></td><td class="cl-091c679c"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.9.3</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c679d"><p class="cl-091c4f78"><span class="cl-0918d0e6">pROC</span></p></td><td class="cl-091c67a6"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.18.5</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6761"><p class="cl-091c4f78"><span class="cl-0918d0e6">purrr</span></p></td><td class="cl-091c6762"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.0.4</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c67a7"><p class="cl-091c4f78"><span class="cl-0918d0e6">randomForest</span></p></td><td class="cl-091c67a8"><p class="cl-091c4f78"><span class="cl-0918d0e6">4.7.1.2</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6761"><p class="cl-091c4f78"><span class="cl-0918d0e6">readr</span></p></td><td class="cl-091c6762"><p class="cl-091c4f78"><span class="cl-0918d0e6">2.1.5</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c67b0"><p class="cl-091c4f78"><span class="cl-0918d0e6">rpart</span></p></td><td class="cl-091c67b1"><p class="cl-091c4f78"><span class="cl-0918d0e6">4.1.21</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c67b2"><p class="cl-091c4f78"><span class="cl-0918d0e6">rpart.plot</span></p></td><td class="cl-091c67ba"><p class="cl-091c4f78"><span class="cl-0918d0e6">3.1.3</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c676a"><p class="cl-091c4f78"><span class="cl-0918d0e6">stringr</span></p></td><td class="cl-091c676b"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.5.0</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c6789"><p class="cl-091c4f78"><span class="cl-0918d0e6">tibble</span></p></td><td class="cl-091c679c"><p class="cl-091c4f78"><span class="cl-0918d0e6">3.2.1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c676a"><p class="cl-091c4f78"><span class="cl-0918d0e6">tidyr</span></p></td><td class="cl-091c676b"><p class="cl-091c4f78"><span class="cl-0918d0e6">1.3.1</span></p></td></tr><tr style="overflow-wrap:break-word;"><td class="cl-091c67bb"><p class="cl-091c4f78"><span class="cl-0918d0e6">tidyverse</span></p></td><td class="cl-091c67c4"><p class="cl-091c4f78"><span class="cl-0918d0e6">2.0.0</span></p></td></tr></tbody></table></div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
